@@ -7,12 +7,22 @@ use App\Models\Todo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-
+use App\Models\Category;
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
      */
+
+     public function definition(): array
+    {
+        return [
+            'user_id' => rand(1, 100),
+            'title' => ucwords(fake()->sentence()),
+            'is_complete' => rand(0, 1),
+            'category_id' => rand(0, 1) ? Category::inRandomOrder()->first()?->id : null,
+        ];
+    }
     public function run(): void
     {
         // Membuat 1 user admin
@@ -29,6 +39,8 @@ class DatabaseSeeder extends Seeder
         User::factory(100)->create();
 
         // Membuat 500 todo
+        Todo::factory(500)->create();
+        Category::factory(10)->create(); // <--- tambahkan ini
         Todo::factory(500)->create();
     }
 }
