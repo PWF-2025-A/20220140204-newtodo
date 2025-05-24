@@ -17,7 +17,7 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Group route yang memerlukan autentikasi
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     //  Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
