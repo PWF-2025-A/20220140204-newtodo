@@ -1,29 +1,66 @@
 <?php
 
-namespace App\Providers;
+namespace App\Models;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class AppServiceProvider extends ServiceProvider
+class User extends Authenticatable implements MustVerifyEmail, JWTSubject
 {
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasApiTokens,HasFactory, Notifiable;
+
     /**
-     * Register any application services.
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
      */
-    public function register(): void
-    {
-        //
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    public function todo() {
+        return $this->hasMany(Todo::class);
     }
 
     /**
-     * Bootstrap any application services.
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
      */
-    public function boot(): void
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
     {
-        Paginator::useTailwind();
-        Gate::define('admin', function($user) {
-            return $user->is_admin == true;
-        });
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [
+            'isAdmins' => $this->is_admin,
+        ];
     }
 }
