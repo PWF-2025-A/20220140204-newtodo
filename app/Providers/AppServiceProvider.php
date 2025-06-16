@@ -1,66 +1,51 @@
 <?php
 
-namespace App\Models;
+namespace App\Providers;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Models\User;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
+use Laravel\Sanctum\PersonalAccessToken;
 
-class User extends Authenticatable implements MustVerifyEmail, JWTSubject
+class AppServiceProvider extends ServiceProvider
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens,HasFactory, Notifiable;
-
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Register any application services.
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    public function todo() {
-        return $this->hasMany(Todo::class);
+    public function register(): void
+    {
+        //
     }
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Bootstrap any application services.
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function boot(): void
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+        // Gunakan Tailwind untuk pagination
+        Paginator::useTailwind();
 
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
+        // Definisikan gate untuk admin
+        Gate::define('admin', function (User $user) {
+            return $user->is_admin === true;
+        });
 
-    public function getJWTCustomClaims()
-    {
-        return [
-            'isAdmins' => $this->is_admin,
-        ];
+        // Konfigurasi Scramble (API documentation generator)
+        Scramble::configure()
+            ->routes(function (Route $route) {
+                return Str::startsWith($route->getPrefix(), 'api');
+            })
+            ->withDocumentTransformers(function (OpenApi $openApi): void {
+                $openApi->secure(
+                    SecurityScheme::http('bearer')
+                );
+            });
     }
 }
